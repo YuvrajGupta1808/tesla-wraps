@@ -48,3 +48,35 @@ test("server serves the editor and protects generation without a key", async () 
 
   server.close();
 });
+
+test("single-user password protects the website and api", async () => {
+  const previousUsername = process.env.SITE_USERNAME;
+  const previousPassword = process.env.SITE_PASSWORD;
+  process.env.SITE_USERNAME = "solo";
+  process.env.SITE_PASSWORD = "secret";
+
+  const server = createAppServer().listen(0);
+  await new Promise((resolve) => server.once("listening", resolve));
+  const { port } = server.address();
+
+  const health = await fetch(`http://127.0.0.1:${port}/healthz`);
+  assert.equal(health.status, 200);
+
+  const blockedPage = await fetch(`http://127.0.0.1:${port}/`);
+  assert.equal(blockedPage.status, 401);
+
+  const blockedApi = await fetch(`http://127.0.0.1:${port}/api/projects`);
+  assert.equal(blockedApi.status, 401);
+
+  const credentials = Buffer.from("solo:secret").toString("base64");
+  const allowedPage = await fetch(`http://127.0.0.1:${port}/`, {
+    headers: { Authorization: `Basic ${credentials}` },
+  });
+  assert.equal(allowedPage.status, 200);
+
+  server.close();
+  if (previousUsername === undefined) delete process.env.SITE_USERNAME;
+  else process.env.SITE_USERNAME = previousUsername;
+  if (previousPassword === undefined) delete process.env.SITE_PASSWORD;
+  else process.env.SITE_PASSWORD = previousPassword;
+});

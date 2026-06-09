@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: tesla-wraps
+    runtime: node
+    plan: starter
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: STORAGE_DIR
+        value: /var/data
+      - key: SITE_USERNAME
+        value: yuvraj
+      - key: SITE_PASSWORD
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+    disk:
+      name: tesla-wraps-data
+      mountPath: /var/data
+      sizeGB: 1

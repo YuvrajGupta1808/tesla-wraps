@@ -1,12 +1,14 @@
 import { createServer } from "node:http";
+import { randomUUID, timingSafeEqual } from "node:crypto";
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = fileURLToPath(new URL(".", import.meta.url));
 const PORT = Number(process.env.PORT || 3000);
+const HOST = process.env.HOST || "0.0.0.0";
 const MAX_BODY_BYTES = 60_000_000;
-const DATA_DIR = join(ROOT, "data");
+const DATA_DIR = process.env.STORAGE_DIR || join(ROOT, "data");
 const PROJECTS_FILE = join(DATA_DIR, "projects.json");
 const ALLOWED_SIZES = new Set(["1024x1024", "1536x1024", "1024x1536"]);
 const ALLOWED_QUALITIES = new Set(["low", "medium", "high"]);
@@ -25,6 +27,48 @@ const CONTENT_TYPES = {
 function sendJson(response, status, body) {
   response.writeHead(status, { "Content-Type": CONTENT_TYPES[".json"] });
   response.end(JSON.stringify(body));
+}
+
+function safeEqual(left, right) {
+  const leftValue = Buffer.from(left);
+  const rightValue = Buffer.from(right);
+  return leftValue.length === rightValue.length && timingSafeEqual(leftValue, rightValue);
+}
+
+function readBasicAuth(request) {
+  const header = request.headers.authorization || "";
+  if (!header.startsWith("Basic ")) return null;
+
+  try {
+    const decoded = Buffer.from(header.slice(6), "base64").toString("utf8");
+    const separator = decoded.indexOf(":");
+    if (separator < 0) return null;
+    return {
+      username: decoded.slice(0, separator),
+      password: decoded.slice(separator + 1),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function isAuthorized(request) {
+  const expectedPassword = process.env.SITE_PASSWORD || "";
+  if (!expectedPassword) return true;
+
+  const credentials = readBasicAuth(request);
+  if (!credentials || !safeEqual(credentials.password, expectedPassword)) return false;
+
+  const expectedUsername = process.env.SITE_USERNAME || "";
+  return !expectedUsername || safeEqual(credentials.username, expectedUsername);
+}
+
+function requestLogin(response) {
+  response.writeHead(401, {
+    "Content-Type": "text/plain; charset=utf-8",
+    "WWW-Authenticate": 'Basic realm="Wrap Wizard", charset="UTF-8"',
+  });
+  response.end("Login required.");
 }
 
 async function readProjects() {
@@ -157,7 +201,7 @@ async function handleProjects(request, response) {
     }
     const now = new Date().toISOString();
     const project = {
-      id: body.id || crypto.randomUUID(),
+      id: body.id || randomUUID(),
       name: typeof body.name === "string" && body.name.trim() ? body.name.trim().slice(0, 60) : "Untitled wrap",
       createdAt: body.createdAt || now,
       updatedAt: now,
@@ -213,6 +257,13 @@ async function serveFile(request, response) {
 export function createAppServer() {
   return createServer(async (request, response) => {
     try {
+      if (request.method === "GET" && request.url === "/healthz") {
+        return sendJson(response, 200, { ok: true });
+      }
+      if (!isAuthorized(request)) {
+        requestLogin(response);
+        return;
+      }
       if (request.method === "POST" && request.url === "/api/generate") {
         await generateImage(request, response);
         return;
@@ -234,7 +285,7 @@ export function createAppServer() {
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  createAppServer().listen(PORT, () => {
-    console.log(`Wrap Wizard is ready at http://localhost:${PORT}`);
+  createAppServer().listen(PORT, HOST, () => {
+    console.log(`Wrap Wizard is ready at http://${HOST}:${PORT}`);
   });
 }

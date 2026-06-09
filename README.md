@@ -10,6 +10,8 @@ Requires Node.js 20 or newer.
 
 ```bash
 export OPENAI_API_KEY="your-key-here"
+export SITE_USERNAME="yuvraj"
+export SITE_PASSWORD="choose-a-private-password"
 npm start
 ```
 
@@ -17,12 +19,39 @@ Open [http://localhost:3000](http://localhost:3000).
 
 The API key is used only by `server.js` and is never sent to the browser. Upload
 and editing tools work without an API key; only **Make AI art** requires it.
+If `SITE_PASSWORD` is set, the whole website and API require one shared login.
+Leave it unset only for local development.
 
 Run the automated checks with:
 
 ```bash
 npm test
 ```
+
+## Publish On Render
+
+This repo includes `render.yaml` for a single-user Render web service.
+
+1. Push the repo to GitHub.
+2. In Render, create a new Blueprint from this repository.
+3. Set these secret environment variables when Render asks:
+   - `SITE_PASSWORD`: your private website password
+   - `OPENAI_API_KEY`: your OpenAI API key
+4. Keep `SITE_USERNAME` as `yuvraj`, or change it in Render if you prefer a
+   different login name.
+5. Deploy the service and open the generated `onrender.com` URL.
+
+The blueprint uses:
+
+- `npm install` as the build command
+- `npm start` as the start command
+- `/healthz` as the health check path
+- `STORAGE_DIR=/var/data` with a 1 GB persistent disk
+
+Project saves are written to `projects.json`. Render's normal filesystem is
+ephemeral, so saved projects survive redeploys only when the persistent disk is
+attached. Render persistent disks require a paid web service; on the free tier,
+the website can run, but saved projects may disappear after restarts or deploys.
 
 ## Website Features
 
