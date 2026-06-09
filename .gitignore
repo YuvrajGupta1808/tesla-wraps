@@ -1,0 +1,15 @@
+artwork/*
+output/*
+!artwork/.gitkeep
+!output/.gitkeep
+.env
+.DS_Store
+node_modules/
+data/projects.json
+.rocketride/
+
+.cursor/
+.claude/
+.cursor/rules/
+.claude/rules/
+.rocketride/

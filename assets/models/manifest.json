@@ -1,0 +1,113 @@
+{
+  "source": "https://github.com/teslamotors/custom-wraps",
+  "models": [
+    {
+      "slug": "cybertruck",
+      "name": "Cybertruck",
+      "template": "/assets/models/cybertruck/template.png",
+      "vehicleImage": "/assets/models/cybertruck/vehicle_image.png",
+      "width": 1024,
+      "height": 768,
+      "panelCount": 2
+    },
+    {
+      "slug": "model3",
+      "name": "Model 3",
+      "template": "/assets/models/model3/template.png",
+      "vehicleImage": "/assets/models/model3/vehicle_image.png",
+      "width": 1024,
+      "height": 1024,
+      "panelCount": 13
+    },
+    {
+      "slug": "model3-2024-base",
+      "name": "Model 3 (2024+) Standard & Premium",
+      "template": "/assets/models/model3-2024-base/template.png",
+      "vehicleImage": "/assets/models/model3-2024-base/vehicle_image.png",
+      "width": 1024,
+      "height": 1024,
+      "panelCount": 16
+    },
+    {
+      "slug": "model3-2024-performance",
+      "name": "Model 3 (2024+) Performance",
+      "template": "/assets/models/model3-2024-performance/template.png",
+      "vehicleImage": "/assets/models/model3-2024-performance/vehicle_image.png",
+      "width": 1024,
+      "height": 1024,
+      "panelCount": 14
+    },
+    {
+      "slug": "models-2021",
+      "name": "Model S (2021+)",
+      "template": "/assets/models/models-2021/template.png",
+      "vehicleImage": "/assets/models/models-2021/vehicle_image.png",
+      "width": 1024,
+      "height": 1024,
+      "panelCount": 9
+    },
+    {
+      "slug": "models-2025-plaid",
+      "name": "Model S (2025+) Plaid",
+      "template": "/assets/models/models-2025-plaid/template.png",
+      "vehicleImage": "/assets/models/models-2025-plaid/vehicle_image.png",
+      "width": 1024,
+      "height": 1024,
+      "panelCount": 10
+    },
+    {
+      "slug": "modelx-2021",
+      "name": "Model X (2021+)",
+      "template": "/assets/models/modelx-2021/template.png",
+      "vehicleImage": "/assets/models/modelx-2021/vehicle_image.png",
+      "width": 1024,
+      "height": 1024,
+      "panelCount": 9
+    },
+    {
+      "slug": "modely",
+      "name": "Model Y",
+      "template": "/assets/models/modely/template.png",
+      "vehicleImage": "/assets/models/modely/vehicle_image.png",
+      "width": 1024,
+      "height": 1024,
+      "panelCount": 13
+    },
+    {
+      "slug": "modely-2025-base",
+      "name": "Model Y (2025+) Standard",
+      "template": "/assets/models/modely-2025-base/template.png",
+      "vehicleImage": "/assets/models/modely-2025-base/vehicle_image.png",
+      "width": 1024,
+      "height": 1024,
+      "panelCount": 18
+    },
+    {
+      "slug": "modely-2025-performance",
+      "name": "Model Y (2025+) Performance",
+      "template": "/assets/models/modely-2025-performance/template.png",
+      "vehicleImage": "/assets/models/modely-2025-performance/vehicle_image.png",
+      "width": 1024,
+      "height": 1024,
+      "panelCount": 15
+    },
+    {
+      "slug": "modely-2025-premium",
+      "name": "Model Y (2025+) Premium",
+      "template": "/assets/models/modely-2025-premium/template.png",
+      "vehicleImage": "/assets/models/modely-2025-premium/vehicle_image.png",
+      "width": 1024,
+      "height": 1024,
+      "panelCount": 19
+    },
+    {
+      "slug": "modely-l",
+      "name": "Model Y L",
+      "template": "/assets/models/modely-l/template.png",
+      "vehicleImage": "/assets/models/modely-l/vehicle_image.png",
+      "width": 1024,
+      "height": 1024,
+      "panelCount": 20
+    }
+  ]
+}

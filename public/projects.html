@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Saved Designs · Wrap Wizard</title>
+    <link rel="stylesheet" href="/public/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/">
+        <span class="brand-mark">W</span>
+        <span>Wrap Wizard</span>
+      </a>
+      <nav class="main-nav" aria-label="Main navigation">
+        <a href="/">Studio</a>
+        <a href="/projects">Saved designs</a>
+      </nav>
+    </header>
+    <main class="app-shell">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Saved design library</p>
+          <h1>Your wrap garage.</h1>
+          <p>Open a saved design, keep editing, or delete old experiments.</p>
+        </div>
+      </section>
+      <section class="preview-card">
+        <div id="projects-grid" class="projects-grid">
+          <p class="layer-empty">Loading saved designs...</p>
+        </div>
+      </section>
+    </main>
+    <script type="module" src="/public/projects.js"></script>
+  </body>
+</html>

@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#6c4df6" />
+    <title>Wrap Wizard</title>
+    <link rel="stylesheet" href="/public/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/">
+        <span class="brand-mark">W</span>
+        <span>Wrap Wizard</span>
+      </a>
+      <nav class="main-nav" aria-label="Main navigation">
+        <a href="/">Studio</a>
+        <a href="/projects">Saved designs</a>
+      </nav>
+      <div class="step-dots" aria-label="Three easy steps">
+        <span class="active">1. Create</span>
+        <span>2. Place</span>
+        <span>3. Download</span>
+      </div>
+    </header>
+
+    <main class="app-shell">
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Your secret design lab</p>
+          <h1>Build the wildest car ever.</h1>
+          <p>Mix an idea, make art, and unlock your one-of-a-kind ride.</p>
+        </div>
+        <div class="hero-sticker" aria-hidden="true">MAKE<br />IT<br />YOURS!</div>
+      </section>
+
+      <section class="studio">
+        <aside class="toolbox">
+          <div class="tool-section">
+            <div class="section-title">
+              <span class="number">1</span>
+              <div>
+                <h2>Choose Tesla model</h2>
+                <p>Pick the car template to design.</p>
+              </div>
+            </div>
+            <label class="field-label" for="model-select">Tesla model</label>
+            <select id="model-select" class="model-select"></select>
+            <div id="model-meta" class="model-meta">Loading Tesla templates...</div>
+          </div>
+
+          <div class="tool-section">
+            <div class="section-title">
+              <span class="number">3</span>
+              <div>
+                <h2>Pick your art</h2>
+                <p>Use your own pictures or colors.</p>
+              </div>
+            </div>
+
+            <label class="upload-button" for="image-upload">
+              <span class="button-icon">↑</span>
+              Add pictures
+            </label>
+            <input id="image-upload" type="file" multiple accept="image/png,image/jpeg,image/webp" />
+            <button id="sample" class="sample-button">Try surprise colors</button>
+          </div>
+
+          <div class="tool-section">
+            <div class="section-title">
+              <span class="number">2</span>
+              <div>
+                <h2>Choose your canvas</h2>
+                <p>Pick where your sticker will appear.</p>
+              </div>
+            </div>
+            <div id="scope-picker" class="scope-grid">
+              <button class="active" data-scope="all">Whole car</button>
+              <button data-scope="hood">Hood</button>
+              <button data-scope="topPanel">Top panel</button>
+              <button data-scope="driverDoors">Left doors</button>
+              <button data-scope="passengerDoors">Right doors</button>
+              <button data-scope="driverFrontDoor">Left front door</button>
+              <button data-scope="driverRearDoor">Left rear door</button>
+              <button data-scope="passengerFrontDoor">Right front door</button>
+              <button data-scope="passengerRearDoor">Right rear door</button>
+              <button data-scope="frontFenders">Front fenders</button>
+              <button data-scope="rearFenders">Rear fenders</button>
+              <button data-scope="mirrors">Mirrors</button>
+              <button data-scope="sideRails">Side rails</button>
+              <button data-scope="frontBumper">Front bumper</button>
+              <button data-scope="rearBumper">Rear bumper</button>
+            </div>
+          </div>
+
+          <div class="tool-section">
+            <div class="section-title compact">
+              <span class="number">4</span>
+              <div>
+                <h2>Play with it</h2>
+                <p>Drag on the car or use these controls.</p>
+              </div>
+            </div>
+
+            <label class="range-row">
+              <span>Size</span>
+              <input id="scale" type="range" min="25" max="300" value="100" />
+              <output id="scale-value">100%</output>
+            </label>
+            <label class="range-row">
+              <span>Turn</span>
+              <input id="rotation" type="range" min="-180" max="180" value="0" />
+              <output id="rotation-value">0°</output>
+            </label>
+            <label class="range-row">
+              <span>Crop</span>
+              <input id="crop" type="range" min="100" max="300" value="100" />
+              <output id="crop-value">100%</output>
+            </label>
+            <div class="button-row">
+              <button id="flip" class="secondary-button">Flip</button>
+              <button id="reset" class="secondary-button">Reset</button>
+              <button id="backward" class="secondary-button">Send back</button>
+              <button id="delete-layer" class="secondary-button danger-button">Delete</button>
+            </div>
+            <div class="layer-heading">
+              <strong>Your stickers</strong>
+              <span id="layer-count">0</span>
+            </div>
+            <div id="layer-list" class="layer-list">
+              <span class="layer-empty">Add pictures to start.</span>
+            </div>
+          </div>
+
+          <div class="tool-section color-tool">
+            <div class="section-title">
+              <span class="number">5</span>
+              <div>
+                <h2>Paint tools</h2>
+                <p>Fill a section or draw on it with a marker.</p>
+              </div>
+            </div>
+            <div id="paint-mode" class="paint-tabs">
+              <button class="active" data-paint-mode="fill">Fill section</button>
+              <button data-paint-mode="marker">Marker</button>
+            </div>
+            <div class="color-row">
+              <input id="fill-color" type="color" value="#6c4df6" aria-label="Choose fill color" />
+              <input id="hex-color" type="text" value="#6c4df6" maxlength="7" aria-label="Hex color" />
+              <button id="add-color" class="color-add-button">Fill section</button>
+            </div>
+            <div class="color-swatches">
+              <button data-color="#ff3b30" style="--swatch:#ff3b30" aria-label="Red"></button>
+              <button data-color="#ffcc00" style="--swatch:#ffcc00" aria-label="Yellow"></button>
+              <button data-color="#34c759" style="--swatch:#34c759" aria-label="Green"></button>
+              <button data-color="#007aff" style="--swatch:#007aff" aria-label="Blue"></button>
+              <button data-color="#af52de" style="--swatch:#af52de" aria-label="Purple"></button>
+              <button data-color="#111111" style="--swatch:#111111" aria-label="Black"></button>
+            </div>
+            <div id="marker-options" class="marker-options" hidden>
+              <label class="range-row">
+                <span>Width</span>
+                <input id="marker-width" type="range" min="0.25" max="50" step="0.25" value="1" />
+                <output id="marker-width-value">1 px</output>
+              </label>
+              <label class="range-row">
+                <span>Strong</span>
+                <input id="marker-strength" type="range" min="10" max="100" value="85" />
+                <output id="marker-strength-value">85%</output>
+              </label>
+              <button id="new-marker-layer" class="color-add-button wide-button">Start a new marker layer</button>
+              <button id="undo-marker" class="secondary-button wide-button">Undo last line</button>
+              <p>Draw directly on the Tesla. Marker lines stay inside the selected section.</p>
+            </div>
+          </div>
+        </aside>
+
+        <section class="preview-card">
+          <div class="preview-header">
+            <div>
+              <p class="eyebrow">Design playground</p>
+              <h2>Put your sticker on the car.</h2>
+            </div>
+            <div class="preview-actions">
+              <div id="canvas-mode" class="mode-switch" aria-label="Canvas drag mode">
+                <button class="active" data-mode="move">Move</button>
+                <button data-mode="crop">Crop</button>
+              </div>
+              <span id="status" class="status ready">Ready!</span>
+            </div>
+          </div>
+
+          <div class="canvas-wrap">
+            <canvas id="editor" width="1024" height="1024" aria-label="Tesla wrap editor"></canvas>
+            <div id="empty-state" class="empty-state">
+              <strong>Blank Tesla canvas</strong>
+              <span>Add a picture, paint a section, draw with marker, or ask AI.</span>
+            </div>
+          </div>
+          <p id="canvas-help" class="canvas-help">Move mode: drag inside the rectangle to move it. Purple corners resize. Yellow dot rotates.</p>
+
+          <div class="download-row">
+            <div class="output-status">
+              <strong id="file-size">No wrap yet</strong>
+              <span id="output-details">PNG · 1024 × 1024 · Tesla-ready shape</span>
+            </div>
+            <div class="action-buttons">
+              <button id="download" class="download-button" disabled>
+                Download wrap
+                <span>↓</span>
+              </button>
+              <button id="save-project" class="download-button save-button" disabled>
+                Save design
+                <span>♡</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="achievement-strip" aria-label="Design achievements">
+            <span id="badge-art">○ Art Maker</span>
+            <span id="badge-panel">○ Panel Pro</span>
+            <span id="badge-remix">○ Remix Master</span>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <button id="ai-fab" class="ai-fab" aria-expanded="false" aria-controls="ai-dock">
+      <span>✦</span>
+      AI
+    </button>
+
+    <section id="ai-dock" class="ai-dock" hidden aria-label="AI art chat">
+      <div class="ai-dock-header">
+        <div>
+          <p class="eyebrow">AI helper</p>
+          <h2>Make sticker art</h2>
+        </div>
+        <button id="ai-close" aria-label="Close AI chat">×</button>
+      </div>
+      <div id="ai-chat-log" class="ai-chat-log">
+        <div class="ai-message bot">Hi! Tell me what to make, then I will add it to your wrap.</div>
+      </div>
+      <label class="field-label" for="idea">What should AI draw?</label>
+      <textarea id="idea" maxlength="1000" placeholder="A sneaky forest character hiding behind giant trees..."></textarea>
+      <div class="ai-options">
+        <div>
+          <span class="field-label">Picture shape</span>
+          <div id="generation-size" class="choice-row">
+            <button class="active" data-size="1024x1024">Square</button>
+            <button data-size="1536x1024">Wide</button>
+            <button data-size="1024x1536">Tall</button>
+          </div>
+        </div>
+        <div>
+          <span class="field-label">Detail</span>
+          <div id="generation-quality" class="choice-row">
+            <button data-quality="low">Fast</button>
+            <button class="active" data-quality="medium">Great</button>
+            <button data-quality="high">Best</button>
+          </div>
+        </div>
+      </div>
+      <label class="reference-button" for="reference-images">+ Add reference pictures</label>
+      <input id="reference-images" type="file" multiple accept="image/png,image/jpeg,image/webp" />
+      <div id="reference-list" class="reference-list">
+        <span>No references yet</span>
+      </div>
+      <button id="generate" class="primary-button">
+        <span class="button-icon">✦</span>
+        Make AI art
+      </button>
+    </section>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="/public/app.js"></script>
+  </body>
+</html>
