@@ -17,6 +17,12 @@ npm start
 
 Open [http://localhost:3000](http://localhost:3000).
 
+To load values from your local `.env` file during development, run:
+
+```bash
+npm run dev
+```
+
 The API key is used only by `server.js` and is never sent to the browser. Upload
 and editing tools work without an API key; only **Make AI art** requires it.
 If `SITE_PASSWORD` is set, the whole website and API require one shared login.
@@ -28,30 +34,54 @@ Run the automated checks with:
 npm test
 ```
 
-## Publish On Render
+## Publish On Fly.io
 
-This repo includes `render.yaml` for a single-user Render web service.
+This repo includes a `Dockerfile` and `fly.toml` for a single-user Fly.io app.
+The config keeps one machine running, so the website does not cold-start after
+idle time.
 
-1. Push the repo to GitHub.
-2. In Render, create a new Blueprint from this repository.
-3. Set these secret environment variables when Render asks:
-   - `SITE_PASSWORD`: your private website password
-   - `OPENAI_API_KEY`: your OpenAI API key
-4. Keep `SITE_USERNAME` as `yuvraj`, or change it in Render if you prefer a
-   different login name.
-5. Deploy the service and open the generated `onrender.com` URL.
+1. Install and log in to Fly:
 
-The blueprint uses:
+   ```bash
+   brew install flyctl
+   fly auth login
+   ```
 
-- `npm install` as the build command
-- `npm start` as the start command
-- `/healthz` as the health check path
-- `STORAGE_DIR=/var/data` with a 1 GB persistent disk
+2. Create the app. Fly app names are globally unique, so use a different name
+   if `tesla-wraps` is unavailable, then update `app` in `fly.toml`.
 
-Project saves are written to `projects.json`. Render's normal filesystem is
-ephemeral, so saved projects survive redeploys only when the persistent disk is
-attached. Render persistent disks require a paid web service; on the free tier,
-the website can run, but saved projects may disappear after restarts or deploys.
+   ```bash
+   fly apps create tesla-wraps
+   ```
+
+3. Create a 1 GB volume for saved projects:
+
+   ```bash
+   fly volumes create tesla_wraps_data --region sjc --size 1
+   ```
+
+4. Add your secrets:
+
+   ```bash
+   fly secrets set OPENAI_API_KEY="your-key-here"
+   fly secrets set SITE_PASSWORD="choose-a-private-password"
+   ```
+
+5. Deploy:
+
+   ```bash
+   fly deploy
+   ```
+
+6. Open the site:
+
+   ```bash
+   fly open
+   ```
+
+Project saves are written to `projects.json` inside `STORAGE_DIR`. On Fly, this
+repo sets `STORAGE_DIR=/data`, and `fly.toml` mounts the persistent volume there
+so saved projects survive deploys and restarts.
 
 ## Website Features
 
