@@ -10,8 +10,6 @@ Requires Node.js 20 or newer.
 
 ```bash
 export OPENAI_API_KEY="your-key-here"
-export SITE_USERNAME="yuvraj"
-export SITE_PASSWORD="choose-a-private-password"
 npm start
 ```
 
@@ -25,8 +23,9 @@ npm run dev
 
 The API key is used only by `server.js` and is never sent to the browser. Upload
 and editing tools work without an API key; only **Make AI art** requires it.
-If `SITE_PASSWORD` is set, the whole website and API require one shared login.
-Leave it unset only for local development.
+The website is public. Saved designs are connected to each visitor's browser by
+a signed anonymous session cookie, so visitors do not need usernames or
+passwords.
 
 Run the automated checks with:
 
@@ -64,7 +63,7 @@ idle time.
 
    ```bash
    fly secrets set OPENAI_API_KEY="your-key-here"
-   fly secrets set SITE_PASSWORD="choose-a-private-password"
+   fly secrets set SESSION_SECRET="$(openssl rand -base64 48)"
    ```
 
 5. Deploy:
@@ -81,7 +80,8 @@ idle time.
 
 Project saves are written to `projects.json` inside `STORAGE_DIR`. On Fly, this
 repo sets `STORAGE_DIR=/data`, and `fly.toml` mounts the persistent volume there
-so saved projects survive deploys and restarts.
+so saved projects survive deploys and restarts. `SESSION_SECRET` keeps anonymous
+visitor sessions stable across deploys.
 
 ## Website Features
 

@@ -1,5 +1,5 @@
 import { createServer } from "node:http";
-import { randomUUID, timingSafeEqual } from "node:crypto";
+import { createHmac, randomBytes, randomUUID, timingSafeEqual } from "node:crypto";
 import { mkdir, readFile, stat, writeFile } from "node:fs/promises";
 import { extname, join, normalize } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -12,6 +12,12 @@ const DATA_DIR = process.env.STORAGE_DIR || join(ROOT, "data");
 const PROJECTS_FILE = join(DATA_DIR, "projects.json");
 const ALLOWED_SIZES = new Set(["1024x1024", "1536x1024", "1024x1536"]);
 const ALLOWED_QUALITIES = new Set(["low", "medium", "high"]);
+const SESSION_COOKIE = "wrap_session";
+const SESSION_MAX_AGE = 60 * 60 * 24 * 365;
+const SESSION_SECRET = process.env.SESSION_SECRET || randomBytes(32).toString("hex");
+const GENERATION_WINDOW_MS = Number(process.env.GENERATION_WINDOW_MS || 60 * 60 * 1000);
+const GENERATION_LIMIT = Number(process.env.GENERATION_LIMIT || 12);
+const generationAttempts = new Map();
 
 const CONTENT_TYPES = {
   ".css": "text/css; charset=utf-8",
@@ -24,51 +30,78 @@ const CONTENT_TYPES = {
   ".svg": "image/svg+xml",
 };
 
-function sendJson(response, status, body) {
-  response.writeHead(status, { "Content-Type": CONTENT_TYPES[".json"] });
+function sendJson(response, status, body, headers = {}) {
+  response.writeHead(status, { "Content-Type": CONTENT_TYPES[".json"], ...headers });
   response.end(JSON.stringify(body));
 }
 
-function safeEqual(left, right) {
+function safeEqual(left = "", right = "") {
   const leftValue = Buffer.from(left);
   const rightValue = Buffer.from(right);
   return leftValue.length === rightValue.length && timingSafeEqual(leftValue, rightValue);
 }
 
-function readBasicAuth(request) {
-  const header = request.headers.authorization || "";
-  if (!header.startsWith("Basic ")) return null;
+function parseCookies(header = "") {
+  return Object.fromEntries(
+    header
+      .split(";")
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .map((part) => {
+        const separator = part.indexOf("=");
+        const key = separator >= 0 ? part.slice(0, separator) : part;
+        const value = separator >= 0 ? part.slice(separator + 1) : "";
+        return [decodeURIComponent(key), decodeURIComponent(value)];
+      }),
+  );
+}
 
-  try {
-    const decoded = Buffer.from(header.slice(6), "base64").toString("utf8");
-    const separator = decoded.indexOf(":");
-    if (separator < 0) return null;
-    return {
-      username: decoded.slice(0, separator),
-      password: decoded.slice(separator + 1),
-    };
-  } catch {
-    return null;
+function signSession(id) {
+  return createHmac("sha256", SESSION_SECRET).update(id).digest("base64url");
+}
+
+function readSessionId(request) {
+  const cookie = parseCookies(request.headers.cookie)[SESSION_COOKIE] || "";
+  const [id, signature] = cookie.split(".");
+  if (!id || !signature || !safeEqual(signature, signSession(id))) return null;
+  return id;
+}
+
+function createSessionId() {
+  return randomUUID();
+}
+
+function isHttps(request) {
+  const forwarded = request.headers["x-forwarded-proto"];
+  return request.socket.encrypted || forwarded === "https";
+}
+
+function setSessionCookie(request, response, sessionId) {
+  const value = `${sessionId}.${signSession(sessionId)}`;
+  const secure = isHttps(request) ? "; Secure" : "";
+  response.setHeader(
+    "Set-Cookie",
+    `${SESSION_COOKIE}=${encodeURIComponent(value)}; Max-Age=${SESSION_MAX_AGE}; Path=/; HttpOnly; SameSite=Lax${secure}`,
+  );
+}
+
+function getClientKey(request, sessionId) {
+  const forwarded = request.headers["fly-client-ip"] || request.headers["x-forwarded-for"] || request.socket.remoteAddress || "";
+  const ip = Array.isArray(forwarded) ? forwarded[0] : forwarded.split(",")[0].trim();
+  return `${sessionId}:${ip}`;
+}
+
+function checkGenerationLimit(request, sessionId) {
+  const now = Date.now();
+  const key = getClientKey(request, sessionId);
+  const attempts = (generationAttempts.get(key) || []).filter((time) => now - time < GENERATION_WINDOW_MS);
+  if (attempts.length >= GENERATION_LIMIT) {
+    generationAttempts.set(key, attempts);
+    return false;
   }
-}
-
-function isAuthorized(request) {
-  const expectedPassword = process.env.SITE_PASSWORD || "";
-  if (!expectedPassword) return true;
-
-  const credentials = readBasicAuth(request);
-  if (!credentials || !safeEqual(credentials.password, expectedPassword)) return false;
-
-  const expectedUsername = process.env.SITE_USERNAME || "";
-  return !expectedUsername || safeEqual(credentials.username, expectedUsername);
-}
-
-function requestLogin(response) {
-  response.writeHead(401, {
-    "Content-Type": "text/plain; charset=utf-8",
-    "WWW-Authenticate": 'Basic realm="Wrap Wizard", charset="UTF-8"',
-  });
-  response.end("Login required.");
+  attempts.push(now);
+  generationAttempts.set(key, attempts);
+  return true;
 }
 
 async function readProjects() {
@@ -106,10 +139,15 @@ export function buildImagePrompt(idea, size = "1024x1024") {
   ].join(" ");
 }
 
-async function generateImage(request, response) {
+async function generateImage(request, response, sessionId) {
   if (!process.env.OPENAI_API_KEY) {
     return sendJson(response, 503, {
       error: "Image magic is not connected yet. Add OPENAI_API_KEY and restart.",
+    });
+  }
+  if (!checkGenerationLimit(request, sessionId)) {
+    return sendJson(response, 429, {
+      error: "AI art is cooling down. Please try again later.",
     });
   }
 
@@ -174,21 +212,22 @@ async function generateImage(request, response) {
   return sendJson(response, 200, { image: `data:image/png;base64,${image}` });
 }
 
-async function handleProjects(request, response) {
+async function handleProjects(request, response, sessionId) {
   const url = new URL(request.url, "http://localhost");
   const parts = url.pathname.split("/").filter(Boolean);
   const projects = await readProjects();
+  const ownedProjects = projects.filter((item) => item.ownerId === sessionId);
 
   if (request.method === "GET" && parts.length === 2) {
     return sendJson(response, 200, {
-      projects: projects
+      projects: ownedProjects
         .map(({ id, name, createdAt, updatedAt, preview }) => ({ id, name, createdAt, updatedAt, preview }))
         .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)),
     });
   }
 
   if (request.method === "GET" && parts.length === 3) {
-    const project = projects.find((item) => item.id === parts[2]);
+    const project = ownedProjects.find((item) => item.id === parts[2]);
     return project ? sendJson(response, 200, { project }) : sendJson(response, 404, { error: "Project not found." });
   }
 
@@ -202,13 +241,14 @@ async function handleProjects(request, response) {
     const now = new Date().toISOString();
     const project = {
       id: body.id || randomUUID(),
+      ownerId: sessionId,
       name: typeof body.name === "string" && body.name.trim() ? body.name.trim().slice(0, 60) : "Untitled wrap",
       createdAt: body.createdAt || now,
       updatedAt: now,
       preview: typeof body.preview === "string" ? body.preview : "",
       design: body.design || {},
     };
-    const index = projects.findIndex((item) => item.id === project.id);
+    const index = projects.findIndex((item) => item.id === project.id && item.ownerId === sessionId);
     if (index >= 0) projects[index] = project;
     else projects.push(project);
     await writeProjects(projects);
@@ -216,7 +256,7 @@ async function handleProjects(request, response) {
   }
 
   if (request.method === "DELETE" && parts.length === 3) {
-    const remaining = projects.filter((item) => item.id !== parts[2]);
+    const remaining = projects.filter((item) => item.id !== parts[2] || item.ownerId !== sessionId);
     await writeProjects(remaining);
     return sendJson(response, 200, { ok: true });
   }
@@ -260,16 +300,14 @@ export function createAppServer() {
       if (request.method === "GET" && request.url === "/healthz") {
         return sendJson(response, 200, { ok: true });
       }
-      if (!isAuthorized(request)) {
-        requestLogin(response);
-        return;
-      }
+      const sessionId = readSessionId(request) || createSessionId();
+      setSessionCookie(request, response, sessionId);
       if (request.method === "POST" && request.url === "/api/generate") {
-        await generateImage(request, response);
+        await generateImage(request, response, sessionId);
         return;
       }
       if (request.url.startsWith("/api/projects")) {
-        await handleProjects(request, response);
+        await handleProjects(request, response, sessionId);
         return;
       }
       if (request.method !== "GET") {

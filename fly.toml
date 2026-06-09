@@ -7,8 +7,8 @@ primary_region = "sjc"
 [env]
   HOST = "0.0.0.0"
   PORT = "3000"
-  SITE_USERNAME = "yuvraj"
   STORAGE_DIR = "/data"
+  GENERATION_LIMIT = "12"
 
 [http_service]
   internal_port = 3000
